@@ -20,7 +20,7 @@ def test_should_receive_updated_url_for_next_given_custom_domain(client):
     assert response.status_code == status.HTTP_200_OK
     assert json.loads(response.content) == {
         "count": 200,
-        "next": f"http://{custom_domain}/data/?limit={custom_limit}&offset=2",
+        "next": f"https://{custom_domain}/data/?limit={custom_limit}&offset=2",
         "previous": None,
         "results": [{"id": 1, "some_integer": 1}, {"id": 2, "some_integer": 2}],
     }
@@ -37,8 +37,8 @@ def test_should_receive_updated_url_for_next_and_previous_given_custom_domain(cl
     assert response.status_code == status.HTTP_200_OK
     assert json.loads(response.content) == {
         "count": 200,
-        "next": f"http://{custom_domain}/data/?limit={custom_limit}&offset=4",
-        "previous": f"http://{custom_domain}/data/?limit={custom_limit}",
+        "next": f"https://{custom_domain}/data/?limit={custom_limit}&offset=4",
+        "previous": f"https://{custom_domain}/data/?limit={custom_limit}",
         "results": [{"id": 3, "some_integer": 3}, {"id": 4, "some_integer": 4}],
     }
 
