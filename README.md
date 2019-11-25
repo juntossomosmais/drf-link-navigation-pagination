@@ -19,13 +19,13 @@ If you want to change de host address located on `next` and `previous` fields, t
 }
 ```
 
-Using a reverse proxy (like AWS API Gateway) to intermediate between your API, adding `X-Drf-Change-Domain=chumaço` header to the request will make the client receive the following:
+Using a reverse proxy (like AWS API Gateway) to intermediate between your API, adding `X-Drf-Change-Domain=chumaco` header to the request will make the client receive the following:
 
 ```json
 {
   "links": {
-    "next": "http://chumaço/api/v1/entities/?limit=1&offset=2",
-    "previous": "http://chumaço/api/v1/entities/limit=1"
+    "next": "http://chumaco/api/v1/entities/?limit=1&offset=2",
+    "previous": "http://chumaco/api/v1/entities/limit=1"
   },
   "count": 100,
   "results": [
@@ -35,6 +35,10 @@ Using a reverse proxy (like AWS API Gateway) to intermediate between your API, a
   ]
 }
 ```
+
+# Configuration process
+
+Not yet fully available, but feel free to see our tests to get insights.
 
 ## Tests
 

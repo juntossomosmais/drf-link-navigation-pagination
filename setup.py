@@ -10,7 +10,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name="drf-link-navigation-pagination",
-    version="0.0.1",
+    version="0.0.2",
     description="Yet another pagination class for DRF to set host address by header",
     long_description=README,
     long_description_content_type="text/markdown",
