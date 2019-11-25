@@ -20,7 +20,7 @@ def test_should_receive_updated_url_for_next_given_custom_domain(client):
     assert response.status_code == status.HTTP_200_OK
     assert json.loads(response.content) == {
         "count": 200,
-        "next": f"https://{custom_domain}/data/?limit={custom_limit}&offset=2",
+        "next": f"http://{custom_domain}/data/?limit={custom_limit}&offset=2",
         "previous": None,
         "results": [{"id": 1, "some_integer": 1}, {"id": 2, "some_integer": 2}],
     }
@@ -37,9 +37,70 @@ def test_should_receive_updated_url_for_next_and_previous_given_custom_domain(cl
     assert response.status_code == status.HTTP_200_OK
     assert json.loads(response.content) == {
         "count": 200,
-        "next": f"https://{custom_domain}/data/?limit={custom_limit}&offset=4",
-        "previous": f"https://{custom_domain}/data/?limit={custom_limit}",
+        "next": f"http://{custom_domain}/data/?limit={custom_limit}&offset=4",
+        "previous": f"http://{custom_domain}/data/?limit={custom_limit}",
         "results": [{"id": 3, "some_integer": 3}, {"id": 4, "some_integer": 4}],
+    }
+
+
+@pytest.mark.django_db
+def test_should_receive_updated_url_for_next_given_custom_request_path_with_https_or_http(client):
+    custom_request_path = "salted-path"
+    headers = {"HTTP_X_DRF_ADD_REQUEST_PATH": custom_request_path}
+
+    def _do_execute_and_assert(with_https: bool):
+        custom_headers = {"HTTP_X_DRF_FORCE_HTTPS": with_https}
+        custom_headers.update(headers)
+        scheme = "https" if with_https else "http"
+
+        response = client.get(f"/data/?limit=1", **custom_headers)
+        assert response.status_code and json.loads(response.content) == {
+            "count": 200,
+            "next": f"{scheme}://testserver/{custom_request_path}/data?limit=1&offset=1",
+            "previous": None,
+            "results": [{"id": 1, "some_integer": 1}],
+        }
+
+        response = client.get(f"/data/?limit=1", **custom_headers)
+        assert response.status_code and json.loads(response.content) == {
+            "count": 200,
+            "next": f"{scheme}://testserver/{custom_request_path}/data?limit=1&offset=1",
+            "previous": None,
+            "results": [{"id": 1, "some_integer": 1}],
+        }
+
+        response = client.get(f"/data/?limit=1", **custom_headers)
+        assert response.status_code and json.loads(response.content) == {
+            "count": 200,
+            "next": f"{scheme}://testserver/{custom_request_path}/data?limit=1&offset=1",
+            "previous": None,
+            "results": [{"id": 1, "some_integer": 1}],
+        }
+
+        response = client.get(f"/data/?limit=1", **custom_headers)
+        assert response.status_code and json.loads(response.content) == {
+            "count": 200,
+            "next": f"{scheme}://testserver/{custom_request_path}/data?limit=1&offset=1",
+            "previous": None,
+            "results": [{"id": 1, "some_integer": 1}],
+        }
+
+    _do_execute_and_assert(with_https=True)
+    _do_execute_and_assert(with_https=False)
+
+
+@pytest.mark.django_db
+def test_should_receive_updated_url_for_next_given_custom_request_path_and_domain(client):
+    custom_domain = "salted-man"
+    custom_request_path = "salted-path"
+    headers = {"HTTP_X_DRF_ADD_REQUEST_PATH": custom_request_path, "HTTP_X_DRF_CHANGE_DOMAIN": custom_domain}
+
+    response = client.get(f"/data/?limit=1", **headers)
+    assert response.status_code and json.loads(response.content) == {
+        "count": 200,
+        "next": f"http://{custom_domain}/{custom_request_path}/data?limit=1&offset=1",
+        "previous": None,
+        "results": [{"id": 1, "some_integer": 1}],
     }
 
 

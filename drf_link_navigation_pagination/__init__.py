@@ -1,4 +1,3 @@
-from typing import Optional
 from urllib.parse import urlparse
 
 from django.conf import settings
@@ -15,7 +14,14 @@ class LinkNavigationPagination(LimitOffsetPagination):
         if hasattr(settings, "DRF_LNP_HEADER_CHANGE_DOMAIN_NAME")
         else "X-Drf-Change-Domain"
     )
-    use_https = _eval_str_as_boolean(settings.DRF_LNP_USE_HTTPS) if hasattr(settings, "DRF_LNP_USE_HTTPS") else True
+    header_add_request_path = (
+        settings.DRF_LNP_HEADER_ADD_REQUEST
+        if hasattr(settings, "DRF_LNP_HEADER_ADD_REQUEST")
+        else "X-Drf-Add-Request-Path"
+    )
+    header_use_https = (
+        settings.DRF_LNP_HEADER_USE_HTTPS if hasattr(settings, "DRF_LNP_HEADER_FORCE_HTTPS") else "X-Drf-Force-Https"
+    )
 
     def get_paginated_response(self, data, *args, **kwargs):
         response_from_super = super().get_paginated_response(data)
@@ -23,20 +29,44 @@ class LinkNavigationPagination(LimitOffsetPagination):
         next_page = response_from_super.data["next"]
         previous_page = response_from_super.data["previous"]
         new_domain = self.request.headers.get(self.header_change_domain)
+        request_path = self.request.headers.get(self.header_add_request_path)
+        force_https = self.request.headers.get(self.header_use_https)
+        force_https = force_https if force_https is not None else False
 
+        if force_https:
+            next_page = _set_https(next_page) if next_page else None
+            previous_page = _set_https(previous_page) if previous_page else None
         if new_domain:
-            response_from_super.data["next"] = _update_url_otherwise_none(next_page, new_domain, self.use_https)
-            response_from_super.data["previous"] = _update_url_otherwise_none(previous_page, new_domain, self.use_https)
+            next_page = _get_updated_url(next_page, new_domain) if next_page else None
+            previous_page = _get_updated_url(previous_page, new_domain) if previous_page else None
+        if request_path:
+            next_page = _add_request_path(next_page, request_path) if next_page else None
+            previous_page = _add_request_path(previous_page, request_path) if previous_page else None
+
+        response_from_super.data["next"] = next_page
+        response_from_super.data["previous"] = previous_page
 
         return response_from_super
 
 
-def _get_updated_url(url: str, domain: str, use_https: bool) -> str:
+def _set_https(url: str) -> str:
     parse_result = urlparse(url)
-    # See more about _replace method here: https://docs.python.org/3/library/urllib.parse.html#url-parsing
-    new_parse_result = parse_result._replace(netloc=domain, scheme="https" if use_https else "http")
+    new_parse_result = parse_result._replace(scheme="https")
     return new_parse_result.geturl()
 
 
-def _update_url_otherwise_none(url: str, domain: str, use_https: bool) -> Optional[str]:
-    return _get_updated_url(url, domain, use_https) if url else None
+def _get_updated_url(url: str, domain: str) -> str:
+    parse_result = urlparse(url)
+    new_parse_result = parse_result._replace(netloc=domain)
+    return new_parse_result.geturl()
+
+
+def _add_request_path(url: str, request_path: str) -> str:
+    parse_result = urlparse(url)
+    final_path = _urljoin(request_path, parse_result.path)
+    new_parse_result = parse_result._replace(path=final_path)
+    return new_parse_result.geturl()
+
+
+def _urljoin(*args):
+    return "/".join(map(lambda x: str(x).rstrip("/").lstrip("/"), args))
