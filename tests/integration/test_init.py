@@ -1,6 +1,7 @@
 import json
 
 import pytest
+from drf_link_navigation_pagination import _overlap_path
 from rest_framework import status
 from tests.support.fake_django_app.models import TestModel
 
@@ -141,3 +142,27 @@ def test_should_not_receive_updated_url_for_next_and_previous_given_no_custom_do
             {"id": 10, "some_integer": 10},
         ],
     }
+
+
+@pytest.mark.django_db
+def test_should_receive_update_url_for_next_overlapping_path(client):
+    headers = {"HTTP_X_DRF_NUMBER_OVERLAP_PATHS": 1}
+
+    response = client.get(f"/data/?limit=1", **headers)
+    assert response.status_code and json.loads(response.content) == {
+        "count": 200,
+        "next": "http://testserver/?limit=1&offset=1",
+        "previous": None,
+        "results": [{"id": 1, "some_integer": 1}],
+    }
+
+
+@pytest.mark.django_db
+def test_should_overlap_3_paths():
+    assert _overlap_path("http://testserver/first/second/third/fourth/", 1) == "http://testserver/second/third/fourth/"
+    assert _overlap_path("http://testserver/first/second/third/fourth/", 2) == "http://testserver/third/fourth/"
+    assert _overlap_path("http://testserver/first/second/third/fourth/", 3) == "http://testserver/fourth/"
+    assert (
+        _overlap_path("http://testserver/first/second/third/fourth/fifth/?limit=1&offset=1", 4)
+        == "http://testserver/fifth/?limit=1&offset=1"
+    )
