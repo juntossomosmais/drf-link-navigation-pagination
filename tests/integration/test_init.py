@@ -166,3 +166,12 @@ def test_should_overlap_3_paths():
         _overlap_path("http://testserver/first/second/third/fourth/fifth/?limit=1&offset=1", 4)
         == "http://testserver/fifth/?limit=1&offset=1"
     )
+
+
+@pytest.mark.django_db
+def test_should_set_max_limit_if_received_the_header(client):
+    headers = {"HTTP_X_DRF_MAX_PAGINATION_SIZE": 10}
+
+    response = client.get("/data/?limit=20", **headers)
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
