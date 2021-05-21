@@ -32,9 +32,17 @@ class LinkNavigationPagination(LimitOffsetPagination):
         if hasattr(settings, "DRF_LNP_HEADER_NUMBER_OF_OVERLAP_PATHS")
         else "X-Drf-Number-Overlap-Paths"
     )
+    header_max_pagination_size = (
+        settings.DRF_MAX_PAGINATION_SIZE
+        if hasattr(settings, "DRF_MAX_PAGINATION_SIZE")
+        else "X-Drf-Max-Pagination-Size"
+    )
 
     def get_paginated_response(self, data, *args, **kwargs):
         logger.debug("Getting answer from super")
+        if self.header_max_pagination_size is not None:
+            # https://www.django-rest-framework.org/api-guide/pagination/#limitoffsetpagination
+            self.max_limit = self.header_max_pagination_size
         response_from_super = super().get_paginated_response(data)
 
         next_page = response_from_super.data["next"]
