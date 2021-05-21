@@ -169,9 +169,19 @@ def test_should_overlap_3_paths():
 
 
 @pytest.mark.django_db
-def test_should_set_max_limit_if_received_the_header(client):
-    headers = {"HTTP_X_DRF_MAX_PAGINATION_SIZE": 10}
+@pytest.mark.parametrize('pagination_size,limit,expected_status', [
+    (10, 10, status.HTTP_200_OK),
+    (10, 1, status.HTTP_200_OK),
+    (10, 11, status.HTTP_400_BAD_REQUEST),
+    # defaults to default limit (aka the page size on the settings)
+    (10, -1, status.HTTP_200_OK),
+    (20, 11, status.HTTP_200_OK),
+    (20, 21, status.HTTP_400_BAD_REQUEST),
+    (None, 200, status.HTTP_200_OK)
+])
+def test_should_set_max_limit_if_received_the_header(client, pagination_size, limit, expected_status):
+    headers = {"HTTP_X_DRF_MAX_PAGINATION_SIZE": pagination_size}
 
-    response = client.get("/data/?limit=20", **headers)
+    response = client.get(f"/data/?limit={limit}", **headers)
 
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.status_code == expected_status
