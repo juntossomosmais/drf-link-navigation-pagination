@@ -5,9 +5,9 @@ from urllib.parse import urlparse
 
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
-from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.exceptions import APIException
 from rest_framework import status
+from rest_framework.exceptions import APIException
+from rest_framework.pagination import LimitOffsetPagination
 
 logger = logging.getLogger("drf_link_navigation_pagination")
 
@@ -18,8 +18,8 @@ def _eval_str_as_boolean(value: str):
 
 class BadLimitValue(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
-    default_detail = _('Bad limit value sent.')
-    default_code = 'bad_limit_value'
+    default_detail = _("Bad limit value sent.")
+    default_code = "bad_limit_value"
 
 
 class LinkNavigationPagination(LimitOffsetPagination):

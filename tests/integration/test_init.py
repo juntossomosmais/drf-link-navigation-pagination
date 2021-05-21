@@ -1,8 +1,9 @@
 import json
 
 import pytest
-from drf_link_navigation_pagination import _overlap_path
 from rest_framework import status
+
+from drf_link_navigation_pagination import _overlap_path
 from tests.support.fake_django_app.models import TestModel
 
 
@@ -169,16 +170,19 @@ def test_should_overlap_3_paths():
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize('pagination_size,limit,expected_status', [
-    (10, 10, status.HTTP_200_OK),
-    (10, 1, status.HTTP_200_OK),
-    (10, 11, status.HTTP_400_BAD_REQUEST),
-    # defaults to default limit (aka the page size on the settings)
-    (10, -1, status.HTTP_200_OK),
-    (20, 11, status.HTTP_200_OK),
-    (20, 21, status.HTTP_400_BAD_REQUEST),
-    (None, 200, status.HTTP_200_OK)
-])
+@pytest.mark.parametrize(
+    "pagination_size,limit,expected_status",
+    [
+        (10, 10, status.HTTP_200_OK),
+        (10, 1, status.HTTP_200_OK),
+        (10, 11, status.HTTP_400_BAD_REQUEST),
+        # defaults to default limit (aka the page size on the settings)
+        (10, -1, status.HTTP_200_OK),
+        (20, 11, status.HTTP_200_OK),
+        (20, 21, status.HTTP_400_BAD_REQUEST),
+        (None, 200, status.HTTP_200_OK),
+    ],
+)
 def test_should_set_max_limit_if_received_the_header(client, pagination_size, limit, expected_status):
     headers = {"HTTP_X_DRF_MAX_PAGINATION_SIZE": pagination_size}
 
