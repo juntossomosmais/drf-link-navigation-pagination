@@ -1,4 +1,5 @@
 import logging
+from contextlib import suppress
 from pathlib import PurePosixPath
 from urllib.parse import unquote
 from urllib.parse import urlparse
@@ -44,11 +45,9 @@ class LinkNavigationPagination(LimitOffsetPagination):
         if request.headers.get(self.header_max_pagination_size) is not None:
             # https://www.django-rest-framework.org/api-guide/pagination/#limitoffsetpagination
             self.max_limit = int(request.headers.get(self.header_max_pagination_size))
-            try:
+            with suppress(ValueError):
                 if int(request.query_params.get(self.limit_query_param, 0)) > self.max_limit:
                     raise BadLimitValue()
-            except ValueError:
-                pass
         return super().paginate_queryset(queryset, request, view)
 
     def get_paginated_response(self, data, *args, **kwargs):
