@@ -42,11 +42,13 @@ class LinkNavigationPagination(LimitOffsetPagination):
 
     def paginate_queryset(self, queryset, request, view=None):
         if request.headers.get(self.header_max_pagination_size) is not None:
-            # https://www.django-rest-framework.org/api-guide/pagination/#limitoffsetpagination
-            self.max_limit = request.headers.get(self.header_max_pagination_size)
-
-            if int(request.query_params[self.limit_query_param]) > self.max_limit:
-                raise BadLimitValue()
+            try:
+                # https://www.django-rest-framework.org/api-guide/pagination/#limitoffsetpagination
+                self.max_limit = int(request.headers.get(self.header_max_pagination_size))
+                if int(request.query_params.get(self.limit_query_param, 0)) > self.max_limit:
+                    raise BadLimitValue()
+            except ValueError:
+                pass
 
         return super().paginate_queryset(queryset, request, view)
 
