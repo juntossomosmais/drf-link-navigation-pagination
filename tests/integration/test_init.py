@@ -192,6 +192,28 @@ def test_should_set_max_limit_if_received_the_header(client, pagination_size, li
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize(
+    "pagination_size,limit,returned_elements_count",
+    [
+        (10, 10, 10),
+        (10, 1, 1),
+        # defaults to default limit (aka the page size on the settings)
+        (10, -1, 5),
+        (20, 11, 11),
+        (None, 200, 200),
+        (None, 300, 200)
+    ],
+)
+def test_should_return_only_up_to_limit_elements(client, pagination_size, limit, returned_elements_count):
+    headers = {"HTTP_X_DRF_MAX_PAGINATION_SIZE": pagination_size}
+
+    response = client.get(f"/data/?limit={limit}", **headers)
+
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()["results"]) == returned_elements_count
+
+
+@pytest.mark.django_db
 def test_should_work_if_no_limit_is_present(client):
     headers = {"HTTP_X_DRF_MAX_PAGINATION_SIZE": "10"}
 
