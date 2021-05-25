@@ -1,6 +1,8 @@
 # DRF Link Navigation Pagination
 
-Yet another [thirdy party package for DRF Pagination](https://www.django-rest-framework.org/api-guide/pagination/). 
+Yet another [thirdy party package for DRF Pagination](https://www.django-rest-framework.org/api-guide/pagination/).
+
+This package adds support to some headers that allow you to configure the behaviour of the LimitOffsetPagination class.
 
 ## X-Drf-Change-Domain
 If you want to change de host address located on `next` and `previous` fields, then this is the right thing to you. Take this body as an example:
@@ -70,7 +72,13 @@ Otherwise the default paginated  response is generated:
 
 # Configuration process
 
-Not yet fully available, but feel free to see our tests to get insights.
+To use this package after installing you need to use it's pagination class. in your `settings.py` do the following:
+```python
+REST_FRAMEWORK = {
+    "DEFAULT_PAGINATION_CLASS": "drf_link_navigation_pagination.LinkNavigationPagination",
+    ...
+}
+```
 
 ## Tests
 
