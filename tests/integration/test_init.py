@@ -1,8 +1,9 @@
 import json
 
 import pytest
-from drf_link_navigation_pagination import _overlap_path
 from rest_framework import status
+
+from drf_link_navigation_pagination import _overlap_path
 from tests.support.fake_django_app.models import TestModel
 
 
@@ -166,3 +167,56 @@ def test_should_overlap_3_paths():
         _overlap_path("http://testserver/first/second/third/fourth/fifth/?limit=1&offset=1", 4)
         == "http://testserver/fifth/?limit=1&offset=1"
     )
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "pagination_size,limit,expected_status",
+    [
+        (10, 10, status.HTTP_200_OK),
+        (10, 1, status.HTTP_200_OK),
+        (10, 11, status.HTTP_400_BAD_REQUEST),
+        # defaults to default limit (aka the page size on the settings)
+        (10, -1, status.HTTP_200_OK),
+        (20, 11, status.HTTP_200_OK),
+        (20, 21, status.HTTP_400_BAD_REQUEST),
+        (None, 200, status.HTTP_200_OK)
+    ],
+)
+def test_should_set_max_limit_if_received_the_header(client, pagination_size, limit, expected_status):
+    headers = {"HTTP_X_DRF_MAX_PAGINATION_SIZE": pagination_size}
+
+    response = client.get(f"/data/?limit={limit}", **headers)
+
+    assert response.status_code == expected_status
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "pagination_size,limit,returned_elements_count",
+    [
+        (10, 10, 10),
+        (10, 1, 1),
+        # defaults to default limit (aka the page size on the settings)
+        (10, -1, 5),
+        (20, 11, 11),
+        (None, 200, 200),
+        (None, 300, 200)
+    ],
+)
+def test_should_return_only_up_to_limit_elements(client, pagination_size, limit, returned_elements_count):
+    headers = {"HTTP_X_DRF_MAX_PAGINATION_SIZE": pagination_size}
+
+    response = client.get(f"/data/?limit={limit}", **headers)
+
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.json()["results"]) == returned_elements_count
+
+
+@pytest.mark.django_db
+def test_should_work_if_no_limit_is_present(client):
+    headers = {"HTTP_X_DRF_MAX_PAGINATION_SIZE": "10"}
+
+    response = client.get(f"/data/", **headers)
+
+    assert response.status_code == status.HTTP_200_OK

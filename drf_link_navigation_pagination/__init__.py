@@ -1,10 +1,13 @@
 import logging
+from contextlib import suppress
 from pathlib import PurePosixPath
 from urllib.parse import unquote
 from urllib.parse import urlparse
 
 from django.conf import settings
 from rest_framework.pagination import LimitOffsetPagination
+
+from drf_link_navigation_pagination.exceptions import BadLimitValue
 
 logger = logging.getLogger("drf_link_navigation_pagination")
 
@@ -32,6 +35,20 @@ class LinkNavigationPagination(LimitOffsetPagination):
         if hasattr(settings, "DRF_LNP_HEADER_NUMBER_OF_OVERLAP_PATHS")
         else "X-Drf-Number-Overlap-Paths"
     )
+    header_max_pagination_size = (
+        settings.DRF_MAX_PAGINATION_SIZE
+        if hasattr(settings, "DRF_MAX_PAGINATION_SIZE")
+        else "X-Drf-Max-Pagination-Size"
+    )
+
+    def paginate_queryset(self, queryset, request, view=None):
+        if request.headers.get(self.header_max_pagination_size) is not None:
+            # https://www.django-rest-framework.org/api-guide/pagination/#limitoffsetpagination
+            self.max_limit = int(request.headers.get(self.header_max_pagination_size))
+            with suppress(ValueError):
+                if int(request.query_params.get(self.limit_query_param, 0)) > self.max_limit:
+                    raise BadLimitValue()
+        return super().paginate_queryset(queryset, request, view)
 
     def get_paginated_response(self, data, *args, **kwargs):
         logger.debug("Getting answer from super")
