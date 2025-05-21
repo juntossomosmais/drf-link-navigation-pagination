@@ -17,8 +17,8 @@ requests = "*"
 setuptools = "*"
 
 [packages]
-django = ">=2.2.4"
-djangorestframework = ">=3.5"
+django = ">=5.2"
+djangorestframework = ">=3.16"
 
 [requires]
-python_version = "3.7"
+python_version = "3.12"
