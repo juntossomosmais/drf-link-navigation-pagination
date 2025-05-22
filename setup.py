@@ -10,7 +10,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name="drf-link-navigation-pagination",
-    version="0.1.0",
+    version="1.0.0",
     description="Yet another pagination class for DRF to set host address by header",
     long_description=README,
     long_description_content_type="text/markdown",
@@ -22,8 +22,8 @@ setup(
     packages=find_packages(),
     install_requires=["django", "djangorestframework"],
     classifiers=[
-        "Programming Language :: Python :: 3.7",
-        "Framework :: Django :: 2.2",
+        "Programming Language :: Python :: 3.12",
+        "Framework :: Django :: 5.2",
         "Environment :: Web Environment",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
