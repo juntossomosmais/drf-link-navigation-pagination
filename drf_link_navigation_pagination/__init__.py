@@ -79,8 +79,10 @@ class LinkNavigationPagination(LimitOffsetPagination):
             next_page = _overlap_path(next_page, number_of_overlap_paths) if next_page else None
         if request_path:
             logger.debug("Adding request path")
-            next_page = _add_request_path(next_page, request_path) if next_page else None
-            previous_page = _add_request_path(previous_page, request_path) if previous_page else None
+            # Check if custom domain is also being used
+            has_custom_domain = bool(new_domain)
+            next_page = _add_request_path(next_page, request_path, has_custom_domain) if next_page else None
+            previous_page = _add_request_path(previous_page, request_path, has_custom_domain) if previous_page else None
 
         response_from_super.data["next"] = next_page
         response_from_super.data["previous"] = previous_page
@@ -100,9 +102,23 @@ def _get_updated_url(url: str, domain: str) -> str:
     return new_parse_result.geturl()
 
 
-def _add_request_path(url: str, request_path: str) -> str:
+def _add_request_path(url: str, request_path: str, has_custom_domain: bool = False) -> str:
+    """"
+    This function adds a request path to a URL.
+    If a custom domain is also being used, the trailing slash is removed from the original path.
+    """
     parse_result = urlparse(url)
-    final_path = _urljoin(request_path, parse_result.path)
+    original_path = parse_result.path
+    
+    has_trailing_slash = original_path.endswith("/")
+    
+    final_path = _urljoin(request_path, original_path)
+    
+    if not has_custom_domain and has_trailing_slash:
+        final_path = final_path.rstrip("/") + "/"
+    else:
+        final_path = final_path.rstrip("/")
+    
     new_parse_result = parse_result._replace(path=final_path)
     return new_parse_result.geturl()
 

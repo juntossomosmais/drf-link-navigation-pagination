@@ -58,31 +58,7 @@ def test_should_receive_updated_url_for_next_given_custom_request_path_with_http
         response = client.get(f"/data/?limit=1", **custom_headers)
         assert response.status_code and json.loads(response.content) == {
             "count": 200,
-            "next": f"{scheme}://testserver/{custom_request_path}/data?limit=1&offset=1",
-            "previous": None,
-            "results": [{"id": 1, "some_integer": 1}],
-        }
-
-        response = client.get(f"/data/?limit=1", **custom_headers)
-        assert response.status_code and json.loads(response.content) == {
-            "count": 200,
-            "next": f"{scheme}://testserver/{custom_request_path}/data?limit=1&offset=1",
-            "previous": None,
-            "results": [{"id": 1, "some_integer": 1}],
-        }
-
-        response = client.get(f"/data/?limit=1", **custom_headers)
-        assert response.status_code and json.loads(response.content) == {
-            "count": 200,
-            "next": f"{scheme}://testserver/{custom_request_path}/data?limit=1&offset=1",
-            "previous": None,
-            "results": [{"id": 1, "some_integer": 1}],
-        }
-
-        response = client.get(f"/data/?limit=1", **custom_headers)
-        assert response.status_code and json.loads(response.content) == {
-            "count": 200,
-            "next": f"{scheme}://testserver/{custom_request_path}/data?limit=1&offset=1",
+            "next": f"{scheme}://testserver/{custom_request_path}/data/?limit=1&offset=1",
             "previous": None,
             "results": [{"id": 1, "some_integer": 1}],
         }
@@ -220,3 +196,26 @@ def test_should_work_if_no_limit_is_present(client):
     response = client.get(f"/data/", **headers)
 
     assert response.status_code == status.HTTP_200_OK
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("request_path", ["data-with-slash/", "data-no-slash"])
+def test_should_receive_updated_url_for_next_and_previous_with_trailing_slash_given_force_https(client, request_path):
+    custom_request_path = "salted-path"
+    headers = {"HTTP_X_DRF_ADD_REQUEST_PATH": custom_request_path}
+
+    def _do_execute_and_assert(with_https: bool):
+        custom_headers = {"HTTP_X_DRF_FORCE_HTTPS": with_https}
+        custom_headers.update(headers)
+        scheme = "https" if with_https else "http"
+
+        response = client.get(f"/{request_path}?limit=1", **custom_headers)
+        assert response.status_code and json.loads(response.content) == {
+            "count": 200,
+            "next": f"{scheme}://testserver/{custom_request_path}/{request_path}?limit=1&offset=1",
+            "previous": None,
+            "results": [{"id": 1, "some_integer": 1}],
+        }
+
+    _do_execute_and_assert(with_https=True)
+    _do_execute_and_assert(with_https=False)
