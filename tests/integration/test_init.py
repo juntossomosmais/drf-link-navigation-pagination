@@ -200,9 +200,11 @@ def test_should_work_if_no_limit_is_present(client):
 
 @pytest.mark.django_db
 @pytest.mark.parametrize("request_path", ["data-with-slash/", "data-no-slash"])
-def test_should_receive_updated_url_for_next_and_previous_with_trailing_slash_given_force_https(client, request_path):
+@pytest.mark.parametrize("append_slash", [True, False])
+def test_should_receive_updated_url_for_next_and_previous_with_trailing_slash_given_force_https(client, request_path, append_slash, settings):
     custom_request_path = "salted-path"
     headers = {"HTTP_X_DRF_ADD_REQUEST_PATH": custom_request_path}
+    settings.APPEND_SLASH = append_slash
 
     def _do_execute_and_assert(with_https: bool):
         custom_headers = {"HTTP_X_DRF_FORCE_HTTPS": with_https}

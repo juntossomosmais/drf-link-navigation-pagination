@@ -79,7 +79,6 @@ class LinkNavigationPagination(LimitOffsetPagination):
             next_page = _overlap_path(next_page, number_of_overlap_paths) if next_page else None
         if request_path:
             logger.debug("Adding request path")
-            # Check if custom domain is also being used
             has_custom_domain = bool(new_domain)
             next_page = _add_request_path(next_page, request_path, has_custom_domain) if next_page else None
             previous_page = _add_request_path(previous_page, request_path, has_custom_domain) if previous_page else None
