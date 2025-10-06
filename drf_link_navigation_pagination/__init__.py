@@ -114,9 +114,7 @@ def _add_request_path(url: str, request_path: str, has_custom_domain: bool = Fal
     final_path = _urljoin(request_path, original_path)
     
     if not has_custom_domain and has_trailing_slash:
-        final_path = final_path.rstrip("/") + "/"
-    else:
-        final_path = final_path.rstrip("/")
+        final_path += "/"
     
     new_parse_result = parse_result._replace(path=final_path)
     return new_parse_result.geturl()
