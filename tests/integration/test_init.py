@@ -201,20 +201,117 @@ def test_should_work_if_no_limit_is_present(client):
 @pytest.mark.django_db
 @pytest.mark.parametrize("request_path", ["data-with-slash/", "data-no-slash"])
 @pytest.mark.parametrize("append_slash", [True, False])
-def test_should_receive_updated_url_for_next_and_previous_with_trailing_slash_given_force_https(client, request_path, append_slash, settings):
-    custom_request_path = "salted-path"
-    headers = {"HTTP_X_DRF_ADD_REQUEST_PATH": custom_request_path}
+@pytest.mark.parametrize("header_config", [
+    pytest.param({
+        "name": "all_headers",
+        "headers": {
+            "HTTP_X_DRF_ADD_REQUEST_PATH": "salted-path",
+            "HTTP_X_DRF_NUMBER_OVERLAP_PATHS": 1,
+            "HTTP_X_DRF_CHANGE_DOMAIN": "salted-man"
+        },
+        "expected_domain": "salted-man",
+        "expected_path": "salted-path/{request_path}"
+    }, id="custom_domain+request_path+overlap"),
+    pytest.param({
+        "name": "request_path_and_overlap",
+        "headers": {
+            "HTTP_X_DRF_ADD_REQUEST_PATH": "salted-path",
+            "HTTP_X_DRF_NUMBER_OVERLAP_PATHS": 1
+        },
+        "expected_domain": "testserver",
+        "expected_path": "salted-path/{request_path}"
+    }, id="request_path+overlap"),
+    pytest.param({
+        "name": "overlap_only",
+        "headers": {
+            "HTTP_X_DRF_NUMBER_OVERLAP_PATHS": 1
+        },
+        "expected_domain": "testserver",
+        "expected_path": "{request_path}"
+    }, id="overlap_only"),
+    pytest.param({
+        "name": "request_path_only",
+        "headers": {
+            "HTTP_X_DRF_ADD_REQUEST_PATH": "salted-path"
+        },
+        "expected_domain": "testserver",
+        "expected_path": "salted-path/api/{request_path}"
+    }, id="request_path_only"),
+    pytest.param({
+        "name": "custom_domain_only",
+        "headers": {
+            "HTTP_X_DRF_CHANGE_DOMAIN": "salted-man"
+        },
+        "expected_domain": "salted-man",
+        "expected_path": "api/{request_path}"
+    }, id="custom_domain_only"),
+    pytest.param({
+        "name": "custom_domain_and_overlap",
+        "headers": {
+            "HTTP_X_DRF_NUMBER_OVERLAP_PATHS": 1,
+            "HTTP_X_DRF_CHANGE_DOMAIN": "salted-man"
+        },
+        "expected_domain": "salted-man",
+        "expected_path": "{request_path}"
+    }, id="custom_domain+overlap"),
+    pytest.param({
+        "name": "multiple_overlap_paths",
+        "headers": {
+            "HTTP_X_DRF_NUMBER_OVERLAP_PATHS": 2
+        },
+        "expected_domain": "testserver",
+        "expected_path": ""
+    }, id="multiple_overlap_paths"),
+    pytest.param({
+        "name": "custom_domain_with_multiple_overlap",
+        "headers": {
+            "HTTP_X_DRF_NUMBER_OVERLAP_PATHS": 2,
+            "HTTP_X_DRF_CHANGE_DOMAIN": "salted-man"
+        },
+        "expected_domain": "salted-man",
+        "expected_path": ""
+    }, id="custom_domain+multiple_overlap"),
+    pytest.param({
+        "name": "request_path_with_multiple_overlap",
+        "headers": {
+            "HTTP_X_DRF_ADD_REQUEST_PATH": "salted-path",
+            "HTTP_X_DRF_NUMBER_OVERLAP_PATHS": 2
+        },
+        "expected_domain": "testserver",
+        "expected_path": "salted-path//"
+    }, id="request_path+multiple_overlap"),
+    pytest.param({
+        "name": "all_headers_with_multiple_overlap",
+        "headers": {
+            "HTTP_X_DRF_ADD_REQUEST_PATH": "salted-path",
+            "HTTP_X_DRF_NUMBER_OVERLAP_PATHS": 2,
+            "HTTP_X_DRF_CHANGE_DOMAIN": "salted-man"
+        },
+        "expected_domain": "salted-man",
+        "expected_path": "salted-path//"
+    }, id="all_headers+multiple_overlap"),
+    pytest.param({
+        "name": "no_headers",
+        "headers": {},
+        "expected_domain": "testserver",
+        "expected_path": "api/{request_path}"
+    }, id="no_headers")
+])
+def test_trailing_slash_behavior_with_multiple_headers(client, request_path, append_slash, header_config, settings):
     settings.APPEND_SLASH = append_slash
 
     def _do_execute_and_assert(with_https: bool):
         custom_headers = {"HTTP_X_DRF_FORCE_HTTPS": with_https}
-        custom_headers.update(headers)
+        custom_headers.update(header_config["headers"])
         scheme = "https" if with_https else "http"
 
-        response = client.get(f"/{request_path}?limit=1", **custom_headers)
+        response = client.get(f"/api/{request_path}?limit=1", **custom_headers)
+        
+        expected_next = f"{scheme}://{header_config['expected_domain']}/{header_config['expected_path'].format(request_path=request_path)}?limit=1&offset=1"
+        
         assert response.status_code and json.loads(response.content) == {
             "count": 200,
-            "next": f"{scheme}://testserver/{custom_request_path}/{request_path}?limit=1&offset=1",
+            "next": expected_next,
             "previous": None,
             "results": [{"id": 1, "some_integer": 1}],
         }

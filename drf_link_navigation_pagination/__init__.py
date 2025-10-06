@@ -80,8 +80,9 @@ class LinkNavigationPagination(LimitOffsetPagination):
         if request_path:
             logger.debug("Adding request path")
             has_custom_domain = bool(new_domain)
-            next_page = _add_request_path(next_page, request_path, has_custom_domain) if next_page else None
-            previous_page = _add_request_path(previous_page, request_path, has_custom_domain) if previous_page else None
+            has_overlap_paths = bool(number_of_overlap_paths)
+            next_page = _add_request_path(next_page, request_path, has_custom_domain, has_overlap_paths) if next_page else None
+            previous_page = _add_request_path(previous_page, request_path, has_custom_domain, has_overlap_paths) if previous_page else None
 
         response_from_super.data["next"] = next_page
         response_from_super.data["previous"] = previous_page
@@ -101,7 +102,7 @@ def _get_updated_url(url: str, domain: str) -> str:
     return new_parse_result.geturl()
 
 
-def _add_request_path(url: str, request_path: str, has_custom_domain: bool = False) -> str:
+def _add_request_path(url: str, request_path: str, has_custom_domain: bool = False, has_overlap_paths: bool = False) -> str:
     """"
     This function adds a request path to a URL.
     If a custom domain is also being used, the trailing slash is removed from the original path.
@@ -113,7 +114,7 @@ def _add_request_path(url: str, request_path: str, has_custom_domain: bool = Fal
     
     final_path = _urljoin(request_path, original_path)
     
-    if not has_custom_domain and has_trailing_slash:
+    if (not has_custom_domain or has_overlap_paths) and has_trailing_slash:
         final_path += "/"
     
     new_parse_result = parse_result._replace(path=final_path)
@@ -122,14 +123,20 @@ def _add_request_path(url: str, request_path: str, has_custom_domain: bool = Fal
 
 def _overlap_path(url: str, number_of_overlaps: int) -> str:
     parse_result = urlparse(url)
-    path_as_posix = PurePosixPath(unquote(urlparse(url).path))
+    original_path = parse_result.path
+    
+    path_as_posix = PurePosixPath(unquote(original_path))
     if len(path_as_posix.parts) > 1:
         number_of_overlaps += 1
         new_parts = path_as_posix.parts[number_of_overlaps:]
-        if len(new_parts) == 0:
-            final_path = path_as_posix.parts[0]
-        else:
-            final_path = path_as_posix.parts[0] + "/".join(new_parts) + path_as_posix.parts[0]
+        final_path = path_as_posix.parts[0]
+        
+        if len(new_parts) > 0:
+            final_path += "/".join(new_parts)
+        
+        if original_path.endswith("/") and not final_path.endswith("/"):
+            final_path += "/"
+            
         new_parse_result = parse_result._replace(path=final_path)
         return new_parse_result.geturl()
     return parse_result.geturl()
