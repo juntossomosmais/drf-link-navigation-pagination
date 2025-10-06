@@ -8,6 +8,6 @@ router.register(r"data", TestViewSet)
 
 urlpatterns = [
     path(r"", include(router.urls)),
-    path(r"data-no-slash", TestListViewSet.as_view(), name='data-no-slash'),
-    path(r"data-with-slash/", TestListViewSet.as_view(), name='data-with-slash'),
+    path(r"api/data-no-slash", TestListViewSet.as_view(), name='data-no-slash'),
+    path(r"api/data-with-slash/", TestListViewSet.as_view(), name='data-with-slash'),
 ]
